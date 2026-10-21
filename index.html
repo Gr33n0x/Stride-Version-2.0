@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stride - Kira pendapatan & kos harian</title>
+    <meta name="description" content="Stride: jejak pendapatan, kos, minyak dan servis kereta untuk pemandu e-hailing.">
+    <style>#historyList [class*="text-emerald"],#historyList [class*="text-rose"]{white-space:nowrap}</style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#020617">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Stride">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans p-3 md:p-6">
+
+    <main class="max-w-md mx-auto w-full space-y-4">
+
+        <!-- Header / Logo & Pilihan Kenderaan Menyeluruh -->
+        <header class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/80 p-4 rounded-2xl border border-slate-800 shadow-lg gap-3">
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <svg width="44" height="44" viewBox="0 0 100 100" class="shrink-0 rounded-xl shadow-lg shadow-cyan-500/20" role="img" aria-label="Stride">
+                    <defs>
+                        <linearGradient id="strideLogoBg" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#22D3EE"/>
+                            <stop offset="1" stop-color="#6366F1"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="100" height="100" rx="22" fill="url(#strideLogoBg)"/>
+                    <g transform="translate(50 50) scale(0.85) translate(-50 -50)">
+                        <path d="M63.1 24.8A16 16 0 1 0 50 50A16 16 0 1 1 36.9 75.2" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+                    </g>
+                </svg>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide text-white">Stride</h1>
+                    <p class="text-xs text-slate-400">Kira pendapatan & kos harian</p>
+                </div>
+            </div>
+            <!-- Dropdown Menyeluruh Untuk Semua Pengguna -->
+            <div class="w-full sm:w-auto">
+                <select id="vehicle-type-select" onchange="changeVehicleType(this.value)" class="w-full sm:w-auto text-xs bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-cyan-400 font-medium focus:outline-none focus:border-cyan-500">
+                    <optgroup label="Kereta / Sedan / Hatchback">
+                        <option value="Perodua Bezza (1.3L)">Perodua Bezza (1.3L)</option>
+                        <option value="Perodua Myvi (1.3L / 1.5L)">Perodua Myvi (1.3L / 1.5L)</option>
+                        <option value="Perodua Axia (1.0L)">Perodua Axia (1.0L)</option>
+                        <option value="Perodua Alza / Ativa">Perodua Alza / Ativa</option>
+                        <option value="Proton Saga (1.3L)">Proton Saga (1.3L)</option>
+                        <option value="Proton Persona / X50 / X70">Proton Persona / X50 / X70</option>
+                        <option value="Honda City / Jazz / Civic">Honda City / Jazz / Civic</option>
+                        <option value="Toyota Vios / Yaris">Toyota Vios / Yaris</option>
+                    </optgroup>
+                    <optgroup label="Motosikal & Penghantar (P-Hailing)">
+                        <option value="Motosikal Kapcai (B2 - <250cc)">Motosikal Kapcai (B2 - <250cc)</option>
+                        <option value="Motosikal Superbike / Kuasa Tinggi">Motosikal Superbike / Kuasa Tinggi</option>
+                        <option value="Skuter / Delivery Bike">Skuter / Delivery Bike</option>
+                    </optgroup>
+                    <optgroup label="Kenderaan Perdagangan / Van">
+                        <option value="Van / Panel Van (E-Hailing / Kurier)">Van / Panel Van (E-Hailing / Kurier)</option>
+                        <option value="Lori Bonded / Lori Kecil (GDL)">Lori Bonded / Lori Kecil (GDL)</option>
+                    </optgroup>
+                </select>
+            </div>
+        </header>
+
+        <!-- Target Harian (RM) -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-400 uppercase tracking-wider">TARGET HARIAN (RM)</span>
+                <span id="daily-target-percent" class="text-cyan-400 font-bold">0%</span>
+            </div>
+            <div class="flex justify-between items-center text-sm font-semibold">
+                <span id="daily-current-text" class="text-slate-200">RM 0.00</span>
+                <span class="text-slate-400">/</span>
+                <span id="daily-target-max" class="text-slate-300">RM 280.00</span>
+            </div>
+            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-800 overflow-hidden">
+                <div id="daily-progress-bar" class="bg-cyan-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="grid grid-cols-4 gap-2 pt-1">
+                <button onclick="setDailyTarget(250)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-1.5 rounded-lg border border-slate-700 text-cyan-400 transition">RM250</button>
+                <button onclick="setDailyTarget(280)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-1.5 rounded-lg border border-slate-700 text-cyan-400 transition">RM280</button>
+                <button onclick="setDailyTarget(500)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-1.5 rounded-lg border border-slate-700 text-cyan-400 transition">RM500</button>
+                <button onclick="setDailyTarget(1000)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-1.5 rounded-lg border border-slate-700 text-cyan-400 transition">RM1000</button>
+            </div>
+        </section>
+
+        <!-- Target Mileage Bulanan (KM) -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-400 uppercase tracking-wider">TARGET MILEAGE BULANAN (KM)</span>
+                <span id="monthly-km-percent" class="text-cyan-400 font-bold">0%</span>
+            </div>
+            <div class="text-sm font-semibold text-slate-200">
+                <span id="monthly-km-current">0.0 km</span> / <span id="monthly-km-max">2500 km</span>
+            </div>
+            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-800 overflow-hidden">
+                <div id="monthly-km-progress" class="bg-cyan-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="setMonthlyKmTarget(2000)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-2 rounded-xl border border-slate-700 text-cyan-400 transition">2000 KM</button>
+                <button onclick="setMonthlyKmTarget(2500)" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-2 rounded-xl border border-slate-700 text-cyan-400 transition">2500 KM</button>
+            </div>
+        </section>
+
+        <!-- Ringkasan Prestasi -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">RINGKASAN PRESTASI</h2>
+                <input type="month" id="month-select" onchange="changeMonth(this.value)" class="text-xs bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 font-medium focus:outline-none focus:border-cyan-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">Pendapatan Kasar</p>
+                    <h3 id="summary-income" class="text-base font-bold text-emerald-400 mt-1">RM 0.00</h3>
+                </div>
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">Untung Bersih</p>
+                    <h3 id="summary-net" class="text-base font-bold text-indigo-400 mt-1">RM 0.00</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+                <div class="text-slate-400">Purata Untung/Hari: <span id="avg-daily-net" class="text-emerald-400 font-semibold">RM 0.00</span></div>
+                <div class="text-slate-400">Purata KM/Hari: <span id="avg-daily-km" class="text-cyan-400 font-semibold">0.0 km</span></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="text-slate-400">RM/Jam: <span id="avg-per-hour" class="text-amber-300 font-semibold">-</span></div>
+                <div class="text-slate-400">RM/KM: <span id="avg-per-km" class="text-amber-300 font-semibold">-</span></div>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                <div class="flex justify-between"><span class="text-slate-400">Untung sebenar</span><strong id="real-profit" class="text-indigo-300">RM 0.00</strong></div>
+                <p class="text-[10px] text-slate-500">Selepas tabung RM<span class="fund-rate">0.05</span>/km &amp; kos tetap bulanan</p>
+                <p id="real-breakdown" class="text-[10px] text-slate-500"></p>
+                <p id="projection-text" class="text-[10px] text-cyan-400"></p>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500 pt-1 border-t border-slate-800/80">
+                <span>Jumlah Kos: <strong id="summary-expenses" class="text-rose-400">RM 0.00</strong></span>
+                <span>Jumlah KM: <strong id="summary-km" class="text-cyan-400">0.0 km</strong></span>
+            </div>
+        </section>
+
+        <!-- Analisis Graf Prestasi -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">📈 ANALISIS GRAF PRESTASI</h2>
+            <div class="flex items-center justify-center space-x-4 text-[10px] text-slate-400 pt-1">
+                <div class="flex items-center space-x-1"><span class="w-3 h-1.5 bg-indigo-500 rounded"></span><span>Untung Bersih (RM)</span></div>
+                <div class="flex items-center space-x-1"><span class="w-3 h-1.5 bg-emerald-500 rounded"></span><span>Pendapatan Kasar (RM)</span></div>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 h-44 flex items-end justify-between px-2 pt-4" id="performance-chart-container">
+                <div class="w-full text-center text-xs text-slate-500 self-center">Tiada data graf untuk dipaparkan.</div>
+            </div>
+        </section>
+
+        <!-- Borang Tambah Rekod Harian -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Tambah Rekod Harian</h2>
+            <form id="tracker-form" class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Tarikh</label>
+                    <input type="date" id="record-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Pendapatan Kasar (RM)</label>
+                        <input type="number" inputmode="decimal" step="0.01" id="income" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Jumlah Trip</label>
+                        <input type="number" inputmode="decimal" id="trips" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs text-slate-400 mb-1">Odometer Mula</label><input type="number" inputmode="decimal" id="odo-start" oninput="calcDistance()" placeholder="Opsyen" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"></div>
+                    <div><label class="block text-xs text-slate-400 mb-1">Odometer Tamat</label><input type="number" inputmode="decimal" id="odo-end" oninput="calcDistance()" placeholder="Opsyen" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"></div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Jarak Perjalanan (KM)</label>
+                    <input type="number" inputmode="decimal" step="0.1" id="distance" placeholder="Contoh: 120" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Jam Online</label>
+                        <input type="number" inputmode="decimal" step="0.1" id="hours" placeholder="Contoh: 8" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Platform</label>
+                        <select id="platform" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500">
+                            <option value="">-</option><option>Grab</option><option>Bolt</option><option>InDrive</option><option>Lain-lain</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">Minyak (RM)</label>
+                        <input type="number" inputmode="decimal" step="0.01" id="fuel" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">Tol (RM)</label>
+                        <input type="number" inputmode="decimal" step="0.01" id="toll" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">Lain-lain (RM)</label>
+                        <input type="number" inputmode="decimal" step="0.01" id="other-expenses" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-cyan-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Upload Gambar Resit (Optional)</label>
+                    <input type="file" id="receipt-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-cyan-400 hover:file:bg-slate-700">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg text-sm">Simpan Rekod</button>
+                <button type="button" onclick="saveDayOff()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2 rounded-xl border border-slate-700 transition">🌴 Tandakan Hari Cuti</button>
+            </form>
+        </section>
+
+        <!-- Sejarah Rekod -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Sejarah Rekod</h2>
+                <button onclick="clearAllRecords()" class="text-xs text-rose-400 font-semibold hover:text-rose-300 transition">Padam Semua</button>
+            </div>
+            <div id="records-container" class="text-xs text-slate-400 text-center py-4 bg-slate-950/40 rounded-xl border border-slate-800">
+                Belum ada rekod untuk bulan ini.
+            </div>
+        </section>
+
+        <!-- Kesihatan & Tabung Kereta -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">🚗 KESIHATAN & TABUNG KERETA</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">Tabung Maintenance</p>
+                    <h3 id="car-fund" class="text-base font-bold text-cyan-400 mt-1">RM 0.00</h3>
+                    <p class="text-[10px] text-slate-500 mt-0.5">(Auto-kira RM<span class="fund-rate">0.05</span>/km)</p>
+                </div>
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">Odometer Semasa</p>
+                    <h3 id="current-odometer" class="text-base font-bold text-slate-200 mt-1">0 km</h3>
+                    <p class="text-[10px] text-slate-500 mt-0.5"><span>Minyak hitam:</span> <span id="oil-change-remaining">10000 km</span></p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+                <button onclick="toggleVehicleSettings()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-2 rounded-xl border border-slate-700 text-cyan-400 transition">⚙️ Tetapan Kenderaan & Dokumen</button>
+            </div>
+
+            <!-- Panel Tetapan Terbina Dalam (Inline Settings Panel) -->
+            <div id="vehicle-settings-panel" class="hidden bg-slate-950/80 p-3 rounded-xl border border-cyan-500/40 space-y-3 text-xs">
+                <h3 class="font-bold text-cyan-400 uppercase tracking-wider text-[11px]">Kemas Kini Maklumat Kereta & Dokumen</h3>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Odometer Asas / Terkini (KM)</label>
+                    <input type="number" inputmode="decimal" id="input-base-odometer" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Kos Tetap Bulanan (ansuran/sewa, insurans, roadtax) RM</label>
+                    <input type="number" inputmode="decimal" id="input-fixed-monthly" placeholder="0" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">Luput Insurans</label>
+                        <input type="date" id="input-insurans" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">Luput Roadtax</label>
+                        <input type="date" id="input-roadtax" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="saveVehicleSettings()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 rounded-lg transition">Simpan Tetapan</button>
+                    <button onclick="toggleVehicleSettings()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition">Tutup</button>
+                </div>
+            </div>
+
+            <button onclick="logNewService()" class="w-full bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 text-xs font-semibold py-2.5 rounded-xl border border-amber-600/40 transition">🛠️ Log Servis Baru</button>
+            
+            <div id="service-intervals" class="space-y-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-800"></div>
+
+            <div class="space-y-2 pt-1">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sejarah Servis Kenderaan</h3>
+                <div id="service-history-container" class="text-xs text-slate-500 text-center py-2 bg-slate-950/40 rounded-xl border border-slate-800">
+                    Belum ada rekod servis.
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Status Dokumen & PUSPAKOM</h3>
+                <div id="document-status-box" class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs text-cyan-400">
+                    Memuatkan status dokumen...
+                </div>
+            </div>
+        </section>
+
+        <!-- Log Isi Minyak -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">⛽ LOG ISI MINYAK</h2>
+            <div id="fuel-summary" class="text-xs text-slate-400"></div>
+            <button onclick="addFuelFill()" class="w-full bg-cyan-700/30 hover:bg-cyan-700/50 text-cyan-300 text-xs font-semibold py-2.5 rounded-xl border border-cyan-600/40 transition">➕ Tambah Isi Minyak</button>
+            <div id="fuel-list" class="space-y-1.5"></div>
+        </section>
+
+        <!-- Pengurusan Data -->
+        <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">PENGURUSAN DATA</h2>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                    <span>📤</span><span>Export Backup (JSON)</span>
+                </button>
+                <button onclick="importJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                    <span>📥</span><span>Import Backup (JSON)</span>
+                </button>
+                <input type="file" id="import-file" accept=".json" onchange="handleFileImport(event)" class="hidden">
+            </div>
+            <button onclick="exportExcel()" class="w-full bg-emerald-700/30 hover:bg-emerald-700/50 text-emerald-300 text-xs font-semibold py-2.5 rounded-xl border border-emerald-600/40 transition flex items-center justify-center space-x-2">
+                <span>📊</span><span>Muat Turun Laporan Excel (CSV)</span>
+            </button>
+
+            <button onclick="exportYearly()" class="w-full bg-emerald-700/30 hover:bg-emerald-700/50 text-emerald-300 text-xs font-semibold py-2.5 rounded-xl border border-emerald-600/40 transition">🧾 Laporan Tahunan (CSV)</button>
+
+            <div class="pt-3 border-t border-slate-800 space-y-2">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Backup Google Drive</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="backupToDrive()" class="bg-sky-700/30 hover:bg-sky-700/50 text-sky-300 text-xs font-semibold py-2.5 rounded-xl border border-sky-600/40 transition">☁️ Backup ke Drive</button>
+                    <button onclick="restoreFromDrive()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition">⬇️ Restore dari Drive</button>
+                </div>
+                <p id="drive-status" class="text-[10px] text-center text-slate-500"></p>
+                <p id="backup-reminder" class="hidden text-[10px] text-center text-amber-400">⚠️ Belum backup dalam 7 hari. Tekan "Backup ke Drive".</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 p-4 text-center text-xs text-slate-500 mt-6 rounded-2xl max-w-md mx-auto w-full">
+        Stride 2.0 &ldquo;Lancar&rdquo; &copy; 2026
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="google-drive.js"></script>
+    <script src="ui.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.error('Service worker gagal didaftar:', err));
+            });
+        }
+    </script>
+</body>
+</html>
